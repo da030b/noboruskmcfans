@@ -1,0 +1,7 @@
+@import url("tailwindcss");
+
+@plugin "daisyui" {
+  themes:
+    nord --default,
+    dim --prefersdark;
+}
