@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import YouTubeThumbnailView from '../components/YouTubeThumbnailView';
 
 // SSRコンテキストでは Astro.request が利用可能（prerender=false にしているので SSR になります）
-const baseUrl = Astro.request ? new URL('/', new URL(Astro.request.url).origin).toString() : 'http://localhost:3000';
+const baseUrl = new URL('/', new URL(Astro.request.url).origin).toString() ; 
 const apiUrl = new URL('/api/upcoming.json', baseUrl).toString();
 
 const res = await fetch(apiUrl);

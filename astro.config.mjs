@@ -5,7 +5,9 @@ import tailwindcss from '@tailwindcss/vite';
 import vercel from '@astrojs/vercel';
 
 export default defineConfig({
-  adapter: vercel(),
+  adapter: vercel({
+    output: 'hybrid' // または 'server'
+  }),
   integrations: [
     react(),
   ],
