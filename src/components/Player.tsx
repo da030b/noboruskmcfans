@@ -1,85 +1,160 @@
 import React, { useEffect, useRef } from 'react';
-import { usePlayerStore, type Track } from '../stores/playerStore';
+import ReactPlayer from 'react-player';
+import { usePlayerControllerStore } from '../stores/playerControllerStore';
 import { useProgressBar } from '../hooks/useProgressBar';
 
-// "HH:MM:SS" を秒数に変換するヘルパー関数
-function convertTimeToSeconds(timeStr: string): number {
-  const parts = timeStr.split(':').map(Number);
-  if (parts.length === 3) {
-    const [hours, minutes, seconds] = parts;
-    return hours * 3600 + minutes * 60 + seconds;
-  }
-  return 0;
-}
-
 export default function Player() {
-  const { currentTrack, currentSeconds, duration, setCurrentSeconds, setCurrentTrack } = usePlayerStore();
+  // すべての Hooks は必ず同じ順序で呼ぶ
+  const {
+    currentPlaylist,
+    currentTrackIndex,
+    playedSeconds,
+    updatePlayedSeconds,
+    isPlaying,
+    togglePlayPause,
+    handleEnded,
+    selectTrack,
+  } = usePlayerControllerStore();
+
   const progressRef = useRef<HTMLInputElement>(null);
+  const playerRef = useRef<ReactPlayer>(null);
+  const endedTriggered = useRef(false);
 
-  // progress bar の背景更新（currentSeconds に依存）
-  useProgressBar(progressRef, currentSeconds);
+  // 自動選択処理: トラックがあれば currentTrackIndex が null の場合は最初の曲を選択
+  useEffect(() => {
+    if (currentPlaylist.length > 0 && currentTrackIndex === null) {
+      selectTrack(0);
+    }
+  }, [currentPlaylist, currentTrackIndex, selectTrack]);
 
-  const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCurrentSeconds(Number(e.target.value));
+  // 現在のトラックを取得（store の Track 型は { vid, tid, title, artist, start, end, originalIndex }）
+  const currentTrack =
+    currentTrackIndex !== null && currentPlaylist[currentTrackIndex]
+      ? currentPlaylist[currentTrackIndex]
+      : null;
+
+  // useProgressBar は必ず呼ぶ（currentTrack が無くても 0 を渡す）
+  useProgressBar(progressRef, playedSeconds - (currentTrack ? currentTrack.start : 0));
+
+  // onPlayerProgress: ReactPlayer の playedSeconds は絶対秒数
+  const onPlayerProgress = (state: { playedSeconds: number }) => {
+    if (currentTrack) {
+      if (state.playedSeconds >= currentTrack.end) {
+        if (!endedTriggered.current) {
+          endedTriggered.current = true;
+          handleEnded();
+        }
+        return;
+      } else {
+        endedTriggered.current = false;
+      }
+      updatePlayedSeconds(state.playedSeconds);
+    }
   };
 
-  // カスタムイベント "songSelected" をリッスンして、選択された曲情報を store にセットする
+  const getProgressValue = () => (currentTrack ? playedSeconds - currentTrack.start : 0);
+  const getProgressMax = () => (currentTrack ? currentTrack.end - currentTrack.start : 100);
+
+  const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (currentTrack) {
+      const newOffset = Number(e.target.value);
+      const newAbsoluteTime = currentTrack.start + newOffset;
+      updatePlayedSeconds(newAbsoluteTime);
+      playerRef.current?.seekTo(newAbsoluteTime, 'seconds');
+    }
+  };
+
+  // "songSelected" イベント受信：表示側の { videoId, trackNumber } と store の { vid, tid } を比較
   useEffect(() => {
     const handleSongSelected = (event: CustomEvent) => {
-      const detail = event.detail;
-      const newTrack: Track = {
-        vid: detail.videoId,
-        tid: detail.tid,
-        title: detail.title,
-        artist: detail.artist,
-        // start, end が文字列の場合は変換。数値の場合はそのまま利用
-        start: typeof detail.start === 'string' ? convertTimeToSeconds(detail.start) : detail.start,
-        end: typeof detail.end === 'string' ? convertTimeToSeconds(detail.end) : detail.end,
-      };
-      setCurrentTrack(newTrack);
+      const selected = event.detail; // 例: { videoId, trackNumber, ... }
+      const index = currentPlaylist.findIndex(
+        (t: any) =>
+          t.vid === selected.videoId &&
+          t.tid === String(selected.trackNumber)
+      );
+      if (index !== -1) {
+        selectTrack(index);
+      }
     };
-
     window.addEventListener('songSelected', handleSongSelected as EventListener);
     return () => {
       window.removeEventListener('songSelected', handleSongSelected as EventListener);
     };
-  }, [setCurrentTrack]);
+  }, [currentPlaylist, selectTrack]);
 
+  // レンダリング結果：すべての Hooks が呼ばれた後に表示する
   return (
-    <div className="fixed bottom-0 inset-x-0 bg-base-200 text-base-content px-6 py-3 shadow-lg border-t border-base-300">
-      {/* プログレスバー */}
-      <input
-        ref={progressRef}
-        type="range"
-        id="progress"
-        min="0"
-        max={duration || 100}
-        value={currentSeconds}
-        onChange={handleProgressChange}
-        className="w-full cursor-pointer"
-      />
-
-      {/* その他の UI */}
-      <div className="flex justify-between items-center gap-4 mt-3">
-        <div className="flex gap-2 items-center truncate">
-          <div className="w-8 h-8 bg-base-100 rounded shadow flex justify-center items-center">
-            🎵
+    <div>
+      {currentTrack ? (
+        <>
+          <div className="fixed bottom-0 inset-x-0 bg-base-200 text-base-content px-6 py-3 shadow-lg border-t border-base-300">
+            <input
+              ref={progressRef}
+              type="range"
+              min={0}
+              max={getProgressMax()}
+              value={getProgressValue()}
+              onChange={handleProgressChange}
+              className="w-full cursor-pointer"
+            />
+            <div className="flex justify-between items-center gap-4 mt-3">
+              <div className="flex gap-2 items-center">
+                <div className="w-8 h-8 bg-base-100 rounded shadow flex justify-center items-center">🎵</div>
+                <div>
+                  <p className="text-sm font-semibold">{currentTrack.title}</p>
+                  <p className="text-xs opacity-70">{currentTrack.artist}</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button className="btn btn-sm btn-circle btn-ghost">⏮️</button>
+                <button onClick={togglePlayPause} className="btn btn-circle btn-primary">
+                  {isPlaying ? '⏸️' : '▶️'}
+                </button>
+                <button className="btn btn-sm btn-circle btn-ghost">⏭️</button>
+              </div>
+            </div>
           </div>
-          <div className="truncate">
-            <p className="text-sm font-semibold truncate">
-              {currentTrack ? currentTrack.title : 'No Track'}
-            </p>
-            <p className="text-xs truncate opacity-70">
-              {currentTrack ? currentTrack.artist : ''}
-            </p>
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '1px',
+              height: '1px',
+              overflow: 'hidden',
+              clip: 'rect(0, 1px, 1px, 0)',
+            }}
+          >
+            <ReactPlayer
+              ref={playerRef}
+              url={`${"https://www.youtube.com/watch?v=" + currentTrack.vid}&start=${currentTrack.start}&end=${currentTrack.end}`}
+              playing={isPlaying}
+              volume={1}
+              controls={false}
+              width="100%"
+              height="100%"
+              onProgress={onPlayerProgress}
+              onEnded={handleEnded}
+              config={{
+                youtube: {
+                  playerVars: {
+                    playsinline: 1,
+                    enablejsapi: 1,
+                    modestbranding: 1,
+                    rel: 0,
+                    autoplay: 1,
+                    start: currentTrack.start,
+                    end: currentTrack.end,
+                  },
+                },
+              }}
+            />
           </div>
-        </div>
-        <div className="flex gap-3">
-          <button className="btn btn-sm btn-circle btn-ghost">⏮️</button>
-          <button className="btn btn-circle btn-primary">▶️</button>
-          <button className="btn btn-sm btn-circle btn-ghost">⏭️</button>
-        </div>
-      </div>
+        </>
+      ) : (
+        <div>No track selected</div>
+      )}
     </div>
   );
 }

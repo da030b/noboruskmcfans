@@ -1,35 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { JSX } from 'astro/jsx-runtime';
-import TrackView, { type Track } from './TrackView';
+import TrackView, { type Track as DisplayTrack } from './TrackView';
+import { usePlayerControllerStore } from '../stores/playerControllerStore';
+import { parseTimeToSeconds } from '../utils/time';
 
 interface TrackListViewProps {
-  tracks: Track[];
-  onItemClick?: (track: Track) => void;
+  tracks: DisplayTrack[]; // 表示用トラック (start/end は文字列)
+  onItemClick?: (track: DisplayTrack) => void;
 }
 
 function TrackListView({ tracks, onItemClick }: TrackListViewProps): JSX.Element {
-  // 選択されたトラックを state で保持
-  const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
+  const [selectedTrack, setSelectedTrack] = useState<DisplayTrack | null>(null);
+  const initPlaylist = usePlayerControllerStore((state) => state.initPlaylist);
 
-  const handleClick = (track: Track) => {
+  useEffect(() => {
+    // 表示用トラックを store 用に変換: videoId → vid, trackNumber → trackNumber, start/end を数値に変換
+    const convertedTracks = tracks.map((t, index) => ({
+      vid: t.videoId,
+      tid: String(t.trackNumber),
+      title: t.title,
+      artist: t.artist,
+      start: parseTimeToSeconds(t.start),
+      end: parseTimeToSeconds(t.end),
+      originalIndex: index,
+    }));
+    initPlaylist(convertedTracks);
+  }, [tracks, initPlaylist]);
+
+  const handleClick = (track: DisplayTrack) => {
     setSelectedTrack(track);
-    // オプションの onItemClick が指定されていれば呼び出す
-    if (onItemClick) {
-      onItemClick(track);
-    }
-    // カスタムイベントを発火して、Player などに伝える（必要な場合）
+    if (onItemClick) onItemClick(track);
     window.dispatchEvent(new CustomEvent('songSelected', { detail: track }));
   };
 
   return (
     <ul className="space-y-4">
       {tracks.map((track) => {
-        // トラックが選択中かどうかを、videoId と trackNumber で比較
         const isSelected =
           selectedTrack !== null &&
           selectedTrack.videoId === track.videoId &&
           selectedTrack.trackNumber === track.trackNumber;
-
         return (
           <TrackView
             key={`${track.videoId}-${track.trackNumber}`}
