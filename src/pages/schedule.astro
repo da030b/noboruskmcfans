@@ -1,17 +1,13 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import YouTubeThumbnailView from '../components/YouTubeThumbnailView';
+import { fetchUpcomingLive } from '../utils/fetchUpcomingLive';
 
-// SSRコンテキストでは Astro.request が利用可能（prerender=false にしているので SSR になります）
-const baseUrl = new URL('/', new URL(Astro.request.url).origin).toString() ; 
-const apiUrl = new URL('/api/upcoming.json', baseUrl).toString();
+export const revalidate = 3600; // 1時間ごとに再生成
+export const prerender = false; // SSRで動的に生成する
 
-const res = await fetch(apiUrl);
-if (!res.ok) {
-  throw new Error("Failed to fetch upcoming live events from YouTube");
-}
-const data = await res.json();
-const events = Array.isArray(data) ? data : data.items || [];
+// 直接ユーティリティ関数を呼び出してデータを取得
+const events = await fetchUpcomingLive();
 const scheduleVideoId = "4EYVsybC-gE";
 ---
 
