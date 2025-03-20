@@ -3,8 +3,7 @@ export async function fetchUpcomingLive() {
   const channelId = 'UCkUfp0u4CK07r4bSWauIGFA';
   const apiKey = import.meta.env.YOUTUBE_API_KEY;
   const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=upcoming&type=video&key=${apiKey}`;
-  console.log("Using API Key:", import.meta.env.YOUTUBE_API_KEY);
-  console.log("Using API Key:", apiKey); 
+
   console.log("Fetching upcoming live events:", url);
 
   try {
