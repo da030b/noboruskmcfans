@@ -1,0 +1,21 @@
+---
+// Propsの型定義
+import type { HTMLAttributes } from 'astro/types';
+interface Props extends HTMLAttributes<'button'> {
+  label: string;
+  variant?: 'primary' | 'secondary';
+  disabled?: boolean;
+}
+const { label, variant = 'primary', disabled = false } = Astro.props as Props;
+---
+// ボタン要素の描画
+<button 
+  class={`px-4 py-2 font-bold rounded ${
+    variant === 'primary' 
+      ? 'bg-blue-600 text-white hover:bg-blue-700' 
+      : 'bg-gray-200 text-black hover:bg-gray-300'
+  }`}
+  disabled={disabled}
+>
+  {label}
+</button>

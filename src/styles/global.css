@@ -1,7 +1,53 @@
-@import url("tailwindcss");
+@import "tailwindcss";
 
 @plugin "daisyui" {
   themes:
     nord --default,
     dim --prefersdark;
 }
+
+
+#mobile-menu:not(.hidden) {
+  animation: fade-in 0.3s ease;
+}
+
+input[type='range'] {
+  appearance: none;
+  height: 6px;
+  border-radius: 10px;
+  background-color: #475569; /* トラックの基本背景色 */
+  /* 初期状態では進捗は 0% */
+  background-image: linear-gradient(to right, #22d3ee 0%, #475569 0%);
+  transition: background-image 0.05s ease;
+}
+
+/* サム（thumb）のスタイル */
+input[type='range']::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background-color: #22d3ee;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  transition: transform 0.1s ease;
+}
+
+/* ホバー時、サムのみ大きくする */
+input[type='range']::-webkit-slider-thumb:hover {
+  transform: scale(1.3);
+}
+
+/* アクティブ時（クリック中）はさらに大きくする */
+input[type='range']::-webkit-slider-thumb:active {
+  transform: scale(1.5);
+}
+
+/* ホバー時、トラックの背景は変更しない */
+input[type='range']:hover {
+  background-image: linear-gradient(to right, #22d3ee 0%, #475569 0%);
+}
+
+
+
+
+

@@ -1,0 +1,51 @@
+---
+const siteName = "サイト名";
+const navLinks = [
+  { href: "/", label: "ホーム" },
+  { href: "/about", label: "About" }
+];
+---
+
+<header class="sticky top-0 z-50 bg-base-100 shadow-sm text-base-content">
+  <nav class="container mx-auto flex justify-between items-center px-4 py-3">
+    <a href="/" class="text-xl font-bold">{siteName}</a>
+    
+    <!-- ハンバーガーメニュー -->
+    <button id="menu-toggle" class="btn btn-square btn-ghost md:hidden">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6">
+        <path id="menu-icon" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+    </button>
+
+    <ul id="mobile-menu" class="hidden absolute right-4 top-14 bg-base-200 shadow rounded-lg w-36 p-2">
+      {navLinks.map(link => (
+        <li><a href={link.href} class="block p-2 rounded hover:bg-base-300">{link.label}</a></li>
+      ))}
+    </ul>
+
+    <ul class="hidden md:flex gap-4">
+      {navLinks.map(link => (
+        <li><a href={link.href} class="hover:underline">{link.label}</a></li>
+      ))}
+    </ul>
+  </nav>
+
+  <!-- JSでメニューを開閉 -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('menu-toggle');
+      const menu = document.getElementById('mobile-menu');
+      const icon = document.querySelector('#menu-icon');
+      if (btn && menu && icon) {
+      btn.addEventListener('click', () => {
+        menu.classList.toggle('hidden');
+        icon.setAttribute('d',
+          menu.classList.contains('hidden') ?
+          'M4 6h16M4 12h16M4 18h16' :
+          'M6 18L18 6M6 6l12 12'
+        );
+      });
+    }
+    });
+  </script>
+</header>
