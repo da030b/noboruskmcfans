@@ -1,0 +1,56 @@
+---
+import Layout from '../layouts/Layout.astro';
+import YouTubeThumbnailView from '../components/YouTubeThumbnailView';
+
+// SSRコンテキストでは Astro.request が利用可能（prerender=false にしているので SSR になります）
+const baseUrl = Astro.request ? new URL('/', new URL(Astro.request.url).origin).toString() : 'http://localhost:3000';
+const apiUrl = new URL('/api/upcoming.json', baseUrl).toString();
+
+const res = await fetch(apiUrl);
+if (!res.ok) {
+  throw new Error("Failed to fetch upcoming live events from YouTube");
+}
+const data = await res.json();
+const events = Array.isArray(data) ? data : data.items || [];
+const scheduleVideoId = "4EYVsybC-gE";
+---
+
+<Layout title="スケジュール">
+  <div>
+    <h1 class="text-2xl font-bold mb-4">Weekly Schedule</h1>
+    <YouTubeThumbnailView videoId="4EYVsybC-gE" width={480} height={270} quality="max" />
+  </div>
+  <div>
+    <h1 class="text-2xl font-bold mb-4">Upcoming..</h1>
+    {events.length === 0 ? (
+      <p>現在、配信予定のライブはありません。</p>
+    ) : ( 
+      <ul class="space-y-4">
+        {events.map((item: any) => (
+          item.id.videoId != scheduleVideoId &&
+          <li key={item.id.videoId} class="border p-4 rounded shadow">
+            <a 
+              href={`https://www.youtube.com/watch?v=${item.id.videoId}`} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              class="flex flex-col gap-2"
+            >
+              <img
+                src={item.snippet.thumbnails.high.url}
+                alt={item.snippet.title}
+                class="w-64 h-auto object-cover rounded"
+              />
+              <div>
+                <h2 class="text-lg font-bold">{item.snippet.title}</h2>
+                <p class="text-sm text-gray-600">{item.snippet.description}</p>
+              </div>
+            </a>
+            <p class="text-xs text-gray-500 mt-2">
+              公開予定日時: {item.snippet.publishedAt}
+            </p>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+</Layout>

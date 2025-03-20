@@ -1,6 +1,12 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import combinedTracks from '../utils/combinedSongData';
+import TrackListView from '../components/TrackListView';
+import Player from '../components/Player.tsx';
+
 ---
 
 <Layout title="曲一覧">
+  <TrackListView tracks={combinedTracks} client:load />
+  <Player client:load />
 </Layout>
