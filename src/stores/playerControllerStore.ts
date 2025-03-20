@@ -1,4 +1,3 @@
-// src/stores/playerControllerStore.ts
 import { create } from 'zustand';
 import type { PlaylistStore } from './playlistStore';
 import type { PlaybackStore } from './playbackStore';

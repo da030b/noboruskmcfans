@@ -1,4 +1,3 @@
-// src/stores/playbackStore.ts
 import type { StateCreator } from 'zustand';
 import type { Track, LoopMode } from '../types/playerControllerTypes';
 
@@ -19,14 +18,15 @@ let isRepeatingSingle = false;
 let isEndingTriggered = false;
 
 export const createPlaybackStore: StateCreator<any, [], [], PlaybackStore> = (
-  set: any,
-  get: any,
-  _api: any
+  set,
+  get,
+  _api
 ) => ({
   playedSeconds: 0,
   isPlaying: false,
   volume: 50,
   desiredSeekTime: null,
+
   togglePlayPause: () => {
     set((state: any) => ({ isPlaying: !state.isPlaying }));
   },
@@ -34,6 +34,7 @@ export const createPlaybackStore: StateCreator<any, [], [], PlaybackStore> = (
   updatePlayedSeconds: (seconds: number) => set({ playedSeconds: seconds }),
   setDesiredSeekTime: (time: number | null) => set({ desiredSeekTime: time }),
   setVolume: (volume: number) => set({ volume }),
+
   handleProgress: (seconds: number) => {
     const { currentPlaylist, currentTrackIndex, loopMode, handleEnded } = get();
     if (currentTrackIndex === null || currentPlaylist.length === 0) {
@@ -41,12 +42,12 @@ export const createPlaybackStore: StateCreator<any, [], [], PlaybackStore> = (
       return;
     }
     const track: Track = currentPlaylist[currentTrackIndex];
-    if (seconds >= track.loopEnd) {
+    if (seconds >= track.end) {
       if (loopMode === "single") {
         if (!isRepeatingSingle) {
           isRepeatingSingle = true;
-          set({ playedSeconds: track.loopStart });
-          get().setDesiredSeekTime(track.loopStart);
+          set({ playedSeconds: track.start });
+          get().setDesiredSeekTime(track.start);
           setTimeout(() => { isRepeatingSingle = false; }, 500);
           return;
         }

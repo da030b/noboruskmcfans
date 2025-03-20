@@ -1,17 +1,15 @@
-// src/types/playerControllerTypes.ts
 export interface Track {
-  videoId: string;
-  url: string;
+  vid: string;       // YouTube 動画ID
+  tid: string;       // トラック番号（文字列）
   title: string;
   artist: string;
-  loopStart: number;
-  loopEnd: number;
+  start: number;     // 再生開始位置（秒、数値）
+  end: number;       // 再生終了位置（秒、数値）
   originalIndex: number;
 }
 
 export type LoopMode = "none" | "playlist" | "single";
 
-// 動画データの型（例）
 export interface VideoWithDetails {
   videoId: string;
   timestamps: {
