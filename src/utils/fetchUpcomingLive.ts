@@ -21,6 +21,7 @@ export async function fetchUpcomingLive() {
     const data = await res.json();
     console.log("Data length:", data.items?.length ?? 0);
     return data.items || [];
+
   } catch (err) {
     console.error("Unexpected error in fetchUpcomingLive:", err);
     // ここで少し待つことでログがフラッシュされる可能性が高まる
